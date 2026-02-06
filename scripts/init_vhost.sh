@@ -351,11 +351,19 @@ launch_vhost() {
 
     # Persist mapping to .env so manual 'docker compose' commands work too
     if [ -n "$STUNNEL_CRT_FILE" ]; then
-        sed -i "/^STUNNEL_CRT_FILE=/d" deploy/docker/.env || true
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "/^STUNNEL_CRT_FILE=/d" deploy/docker/.env || true
+        else
+            sed -i "/^STUNNEL_CRT_FILE=/d" deploy/docker/.env || true
+        fi
         echo "STUNNEL_CRT_FILE=$STUNNEL_CRT_FILE" >> deploy/docker/.env
     fi
     if [ -n "$STUNNEL_KEY_FILE" ]; then
-        sed -i "/^STUNNEL_KEY_FILE=/d" deploy/docker/.env || true
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "/^STUNNEL_KEY_FILE=/d" deploy/docker/.env || true
+        else
+            sed -i "/^STUNNEL_KEY_FILE=/d" deploy/docker/.env || true
+        fi
         echo "STUNNEL_KEY_FILE=$STUNNEL_KEY_FILE" >> deploy/docker/.env
     fi
 
