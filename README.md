@@ -2,17 +2,6 @@
 
 生产就绪的 PostgreSQL 运行时, 包含向量搜索、中文分词、消息队列等扩展, 支持多种安全部署模式。
 
-## 📋 部署要求
-
-| 维度 | 要求 / 规格 | 说明 |
-| :--- | :--- | :--- |
-| **网络** | 公网 IP + 域名 (DNS) | 域名需解析至主机 IP (用于 ACME 证书) |
-| **端口** | 开放 `80`, `443` | 80 用于证书验证 (HTTP-01)，443 为 Stunnel TLS 入口 |
-| **最低** | 1 CPU / 2GB RAM / 20GB SSD | 仅支持基础数据库功能 |
-| **推荐** | 2 CPU / 4GB RAM / 50GB SSD | 支持向量搜索、高并发等全量扩展 |
-
-> **提示**: `80/TCP` 仅用于 ACME 证书验证。本服务默认使用 **`443/TCP`** 作为 Stunnel 安全入口。
-
 ## 🚀 快速开始
 
 ### 一键安装 (默认)
@@ -32,6 +21,17 @@ curl -fsSL https://raw.githubusercontent.com/cloud-neutral-toolkit/postgresql.sv
 - bash -s -- <PG版本> <域名>
 
 > **详细指南**: 查看 [docs/QUICKSTART.md](docs/QUICKSTART.md) | [完整指南](docs/PROJECT_DETAILS.md)
+
+## 📋 部署要求
+
+| 维度 | 要求 / 规格 | 说明 |
+| :--- | :--- | :--- |
+| **网络** | 公网 IP + 域名 (DNS) | 域名需解析至主机 IP (用于 ACME 证书) |
+| **端口** | 开放 `80`, `443` | 80 用于证书验证 (HTTP-01)，443 为 Stunnel TLS 入口 |
+| **最低** | 1 CPU / 2GB RAM / 20GB SSD | 仅支持基础数据库功能 |
+| **推荐** | 2 CPU / 4GB RAM / 50GB SSD | 支持向量搜索、高并发等全量扩展 |
+
+> **提示**: `80/TCP` 仅用于 ACME 证书验证。本服务默认使用 **`443/TCP`** 作为 Stunnel 安全入口。
 
 ## 📦 核心特性
 
