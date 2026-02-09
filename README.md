@@ -2,8 +2,7 @@
 
 生产就绪的 PostgreSQL 运行时, 包含向量搜索、中文分词、消息队列等扩展, 支持多种安全部署模式。
 
-
-## 📋 部署要求
+## 部署要求
 
 | 维度 | 要求 / 规格 | 说明 |
 | :--- | :--- | :--- |
@@ -14,23 +13,16 @@
 
 > **提示**: `80/TCP` 仅用于 ACME 证书验证。本服务默认使用 **`443/TCP`** 作为 Stunnel 安全入口。
 
-## 🚀 快速开始
+## 快速开始
 
-### 一键安装 (默认)
-
-```bash
-# 默认安装最新稳定版 (PG 16)，使用当前主机名作为域名
-curl -fsSL https://raw.githubusercontent.com/cloud-neutral-toolkit/postgresql.svc.plus/main/scripts/init_vhost.sh | bash
-```
-
-### 指定版本与域名 (安装建议)
+### 一键安装
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cloud-neutral-toolkit/postgresql.svc.plus/main/scripts/init_vhost.sh \
   | bash -s -- 17 db.example.com
 ```
-
 - bash -s -- <PG版本> <域名>
+- 默认安装最新稳定版 (PG 16)，使用当前主机名作为域名
 
 > **详细指南**: 查看 [docs/QUICKSTART.md](docs/QUICKSTART.md) | [完整指南](docs/PROJECT_DETAILS.md)
 
