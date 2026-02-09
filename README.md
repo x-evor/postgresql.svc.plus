@@ -26,6 +26,21 @@ curl -fsSL https://raw.githubusercontent.com/cloud-neutral-toolkit/postgresql.sv
 
 > **详细指南**: 查看 [docs/QUICKSTART.md](docs/QUICKSTART.md) | [完整指南](docs/PROJECT_DETAILS.md)
 
+### 🏗️ 部署模式
+
+| 模式 | 复杂度 | TLS隧道 | 适用场景 |
+| :--- | :--- | :--- | :--- |
+| **Stunnel + ACME** | ⭐ | ✅ (自动证书) | 个人/生产单机 |
+| **Kubernetes/Helm** | ⭐⭐⭐ | ✅ (Sidecar) | 企业级生产 |
+
+### 🔄 CI/CD 自动化
+
+GitHub Actions 工作流:
+- ✅ 自动构建和推送镜像
+- ✅ 一键部署到 VM (Docker Compose)
+- ✅ 一键部署到 K8s/K3s (Helm)
+- ✅ 多环境支持 (dev/staging/prod)
+
 ## 📦 核心特性
 
 ### 多模型数据库
@@ -39,21 +54,7 @@ curl -fsSL https://raw.githubusercontent.com/cloud-neutral-toolkit/postgresql.sv
 | MongoDB | **JSONB + GIN** | 文档存储 |
 | Redis | **hstore + UNLOGGED** | 高速键值缓存 |
 
-## 🏗️ 部署模式
-
-| 模式 | 复杂度 | TLS隧道 | 适用场景 |
-| :--- | :--- | :--- | :--- |
-| **Stunnel + ACME** | ⭐ | ✅ (自动证书) | 个人/生产单机 |
-| **Kubernetes/Helm** | ⭐⭐⭐ | ✅ (Sidecar) | 企业级生产 |
-
-### 🔄 CI/CD 自动化
-GitHub Actions 工作流:
-- ✅ 自动构建和推送镜像
-- ✅ 一键部署到 VM (Docker Compose)
-- ✅ 一键部署到 K8s/K3s (Helm)
-- ✅ 多环境支持 (dev/staging/prod)
-
-## 🛠️ 技术栈
+### 🛠️ 技术栈
 - **PostgreSQL**: 16/17/18 (PGDG)
 - **扩展**: pgvector, pg_jieba, pgmq, pg_cron, pg_trgm
 - **TLS 隧道**: stunnel4
