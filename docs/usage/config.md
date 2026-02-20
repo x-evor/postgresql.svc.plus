@@ -10,7 +10,7 @@
 | POSTGRES_PASSWORD | 超级用户密码 | changeme_secure_password |
 | POSTGRES_DB | 默认数据库 | postgres |
 | PG_DATA_PATH | 数据卷路径 | /data |
-| STUNNEL_PORT | 对外 TLS 端口 | 443 |
+| STUNNEL_PORT | 对外 TLS 端口 | 5443 |
 | PGADMIN_EMAIL | pgAdmin 登录邮箱 | admin@example.com |
 | PGADMIN_PASSWORD | pgAdmin 密码 | admin_password |
 | PGADMIN_PORT | pgAdmin 端口 | 5050 |

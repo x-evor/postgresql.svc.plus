@@ -42,7 +42,7 @@ docker-compose --profile admin up -d
 bash scripts/init_vhost.sh 16 db.example.com
 ```
 
-默认会启用 stunnel（对外 443）。
+默认会启用 stunnel（对外 5443，可按需改回 443）。
 
 ## 3) Kubernetes / Helm
 
@@ -64,5 +64,19 @@ helm install postgresql ./deploy/helm/postgresql \
 ## 端口与安全建议
 
 - PostgreSQL 内部仅监听 `5432`。
-- 对外 TLS 入口推荐使用 `443`。
-- 生产环境仅开放 80/443（证书签发 + TLS 连接）。
+- 对外 TLS 入口默认使用 `5443`（同机融合推荐）。
+- 生产环境建议开放 80/5443（证书签发 + TLS 连接）。
+
+## 与 `jp-xhttp` 同机部署建议
+
+若同一节点已运行 `caddy/xray/xray-tcp`（占用 `80/443/1443`），建议将 stunnel 外部端口调整为 `5443`，避免 443 端口冲突:
+
+```bash
+cd deploy/docker
+cp .env.example .env
+# 保留容器内部 5433，只调整宿主机入口
+STUNNEL_PORT=5443
+docker-compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d
+```
+
+详细步骤见: `docs/operations/node-consolidation-migration.md`。

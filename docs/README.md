@@ -22,6 +22,7 @@
 3. `docs/usage/deployment.md`
 4. `docs/architecture/overview.md`
 5. `docs/operations/troubleshooting.md`
+6. `docs/operations/node-consolidation-migration.md`（与 `jp-xhttp` 同机融合迁移）
 
 ## 与旧文件的关系
 

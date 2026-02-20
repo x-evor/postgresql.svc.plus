@@ -6,7 +6,7 @@
 
 - 一台 VM（Debian 12/13、Ubuntu 22.04/24.04、Rocky 8/9/10）
 - 公网 IP + 域名（用于 ACME 证书）
-- 开放端口：`80`（证书签发）和 `443`（stunnel TLS 入口）
+- 开放端口：`80`（证书签发）和 `5443`（stunnel TLS 入口，默认）
 
 ## 一键启动（推荐）
 
@@ -37,7 +37,7 @@ curl -fsSL https://raw.githubusercontent.com/cloud-neutral-toolkit/postgresql.sv
 [postgres-client]
 client  = yes
 accept  = 127.0.0.1:15432
-connect = db.example.com:443
+connect = db.example.com:5443
 verify  = 2
 ```
 
