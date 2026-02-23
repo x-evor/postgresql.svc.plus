@@ -26,6 +26,53 @@ curl -fsSL https://raw.githubusercontent.com/cloud-neutral-toolkit/postgresql.sv
 
 > **详细指南**: 查看 [docs/QUICKSTART.md](docs/QUICKSTART.md) | [完整指南](docs/PROJECT_DETAILS.md)
 
+### 数据库全量迁移示例
+
+使用脚本: `scripts/db_full_migration.sh`
+
+1) 初始化目标机 + 全量迁移（源域名与目标域名独立）
+
+```bash
+/Users/shenlan/workspaces/cloud-neutral-toolkit/postgresql.svc.plus/scripts/db_full_migration.sh \
+  root@postgresql.svc.plus \
+  ubuntu@57.183.19.25 \
+  --init-db \
+  --target-domain postgresql-aws.svc.plus
+```
+
+1.1) 与 `agent.svc.plus(caddy.service+xray)` 共存时（复用 host caddy 申请证书）
+
+```bash
+/Users/shenlan/workspaces/cloud-neutral-toolkit/postgresql.svc.plus/scripts/db_full_migration.sh \
+  root@postgresql.svc.plus \
+  ubuntu@57.183.19.25 \
+  --init-db \
+  --target-domain postgresql-aws.svc.plus \
+  --acme-mode host-caddy
+```
+
+2) 只测迁移流程（不重做目标机 init）
+
+```bash
+/Users/shenlan/workspaces/cloud-neutral-toolkit/postgresql.svc.plus/scripts/db_full_migration.sh \
+  root@postgresql.svc.plus \
+  ubuntu@57.183.19.25 \
+  --skip-init \
+  --target-domain postgresql-aws.svc.plus
+```
+
+3) 常用可选参数
+
+```text
+--source-domain <domain>   源服务域名（用于提示/切换说明）
+--target-domain <domain>   目标域名（用于 init_vhost ACME 证书检查）
+--target-tls-port <port>   目标 TLS 端口，默认 5443
+--acme-mode <mode>         ACME模式：auto|bootstrap|host-caddy（默认 auto）
+--import-globals           导入 globals.sql（角色/表空间）
+--skip-import              仅做 init/校验，不做导入
+--skip-compare             跳过源目标对比
+```
+
 ### 🏗️ 部署模式
 
 | 模式 | 复杂度 | TLS隧道 | 适用场景 |

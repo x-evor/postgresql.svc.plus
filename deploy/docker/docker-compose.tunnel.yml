@@ -15,7 +15,8 @@
 
 services:
   stunnel:
-    image: dweomer/stunnel:latest
+    image: ${STUNNEL_IMAGE:-dweomer/stunnel:latest}
+    platform: ${STUNNEL_PLATFORM:-linux/amd64}
     container_name: stunnel-server
     restart: unless-stopped
 

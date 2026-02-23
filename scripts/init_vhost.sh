@@ -38,6 +38,72 @@ log_info() { echo -e "${GREEN}[INFO] $1${NC}"; }
 log_warn() { echo -e "${YELLOW}[WARN] $1${NC}"; }
 log_err() { echo -e "${RED}[ERROR] $1${NC}"; }
 log_step() { echo -e "${CYAN}==> $1${NC}"; }
+command_exists() { command -v "$1" >/dev/null 2>&1; }
+
+image_supports_arch() {
+    local image="$1"
+    local arch="$2"
+    local token=""
+    case "$arch" in
+      x86_64|amd64) token="amd64" ;;
+      aarch64|arm64) token="arm64" ;;
+      *) token="$arch" ;;
+    esac
+
+    if ! command_exists docker; then
+        return 1
+    fi
+    if docker manifest inspect "$image" 2>/dev/null | grep -q "\"architecture\": \"${token}\""; then
+        return 0
+    fi
+    return 1
+}
+
+configure_host_stunnel4() {
+    local project_root="$1"
+    local tls_port="$2"
+    local pg_local_port="$3"
+    local cert_src="$4"
+    local key_src="$5"
+
+    log_info "Configuring host stunnel4 (tls:${tls_port} -> 127.0.0.1:${pg_local_port})"
+    sudo apt-get update -y >/dev/null
+    sudo apt-get install -y stunnel4 >/dev/null
+
+    sudo install -d -m 750 -o root -g stunnel4 /etc/stunnel/certs
+    sudo cp -f "$cert_src" /etc/stunnel/certs/server-cert.pem
+    sudo cp -f "$key_src" /etc/stunnel/certs/server-key.pem
+    sudo chown root:stunnel4 /etc/stunnel/certs/server-cert.pem /etc/stunnel/certs/server-key.pem
+    sudo chmod 640 /etc/stunnel/certs/server-cert.pem /etc/stunnel/certs/server-key.pem
+
+    sudo tee /etc/stunnel/stunnel.conf >/dev/null <<EOF
+pid = /var/run/stunnel4/stunnel.pid
+setuid = stunnel4
+setgid = stunnel4
+foreground = no
+debug = 4
+
+[postgres_tls]
+accept = 0.0.0.0:${tls_port}
+connect = 127.0.0.1:${pg_local_port}
+cert = /etc/stunnel/certs/server-cert.pem
+key = /etc/stunnel/certs/server-key.pem
+sslVersion = TLSv1.2
+EOF
+
+    # Debian stunnel4 init script reads FILES from /etc/default/stunnel4.
+    if [ -f /etc/default/stunnel4 ]; then
+        sudo sed -i 's|^FILES=.*|FILES="/etc/stunnel/stunnel.conf"|' /etc/default/stunnel4 || true
+    fi
+
+    sudo systemctl enable --now stunnel4 || true
+    sudo systemctl restart stunnel4
+
+    # If docker stunnel container exists (arm64 may fail with amd64 image), keep only host stunnel4.
+    if command_exists docker; then
+        sudo docker rm -f stunnel-server >/dev/null 2>&1 || true
+    fi
+}
 
 # -----------------------------------------------------------------------------
 # 1. OS Detection
@@ -188,12 +254,67 @@ launch_vhost() {
     fi
 
     # Support DOMAIN override
-    # Usage: scripts/init_vhost.sh [PG_MAJOR] [DOMAIN]
+    # Usage: scripts/init_vhost.sh [PG_MAJOR] [DOMAIN] [ACME_MODE] [STUNNEL_MODE]
     export DOMAIN="${2:-${DOMAIN:-$LOCAL_HOSTNAME}}"
+    local requested_acme_mode="${3:-${ACME_MODE:-auto}}"
+    local requested_stunnel_mode="${4:-${STUNNEL_MODE:-auto}}"
+    local acme_mode="$requested_acme_mode"
+    local stunnel_mode="$requested_stunnel_mode"
+    case "$acme_mode" in
+        auto|bootstrap|host-caddy) ;;
+        *)
+            log_warn "Unknown ACME mode: $acme_mode. Falling back to auto."
+            acme_mode="auto"
+            ;;
+    esac
+    case "$stunnel_mode" in
+        auto|docker-stunnel|host-stunnel4) ;;
+        *)
+            log_warn "Unknown STUNNEL mode: $stunnel_mode. Falling back to auto."
+            stunnel_mode="auto"
+            ;;
+    esac
+
+    local host_caddy_active=0
+    local host_agent_stack=0
+    local host_arch
+    host_arch="$(uname -m)"
+    if command_exists systemctl && systemctl is-active --quiet caddy; then
+        host_caddy_active=1
+    fi
+    if command_exists systemctl; then
+        if systemctl is-active --quiet xray || systemctl is-active --quiet xray-tcp || systemctl is-active --quiet agent-svc-plus; then
+            host_agent_stack=1
+        fi
+    fi
+    if [ "$acme_mode" = "auto" ]; then
+        if [ "$host_caddy_active" -eq 1 ] && [ "$host_agent_stack" -eq 1 ]; then
+            acme_mode="host-caddy"
+        else
+            acme_mode="bootstrap"
+        fi
+    fi
+    if [ "$stunnel_mode" = "auto" ]; then
+        stunnel_mode="docker-stunnel"
+    fi
+    local stunnel_image="${STUNNEL_IMAGE:-dweomer/stunnel:latest}"
+    local stunnel_platform="linux/amd64"
+    case "$host_arch" in
+      aarch64|arm64) stunnel_platform="linux/arm64/v8" ;;
+      x86_64|amd64) stunnel_platform="linux/amd64" ;;
+    esac
+    if [ "$stunnel_mode" = "docker-stunnel" ]; then
+        if ! image_supports_arch "$stunnel_image" "$host_arch"; then
+            log_warn "Image $stunnel_image may not expose ${host_arch} manifest. Compose will request platform=${stunnel_platform}."
+        fi
+    fi
 
     log_info "Configuration:"
     log_info "  - PostgreSQL Ver : $PG_MAJOR"
     log_info "  - Service Domain : $DOMAIN"
+    log_info "  - ACME mode      : $acme_mode (requested: $requested_acme_mode)"
+    log_info "  - STUNNEL mode   : $stunnel_mode (requested: $requested_stunnel_mode)"
+    log_info "  - STUNNEL image  : $stunnel_image (${stunnel_platform})"
 
     # Update .env for docker-compose to pick up PG_MAJOR
     # We append or replace PG_MAJOR in .env to ensure persistence across restarts
@@ -245,7 +366,10 @@ launch_vhost() {
         echo "STUNNEL_SERVICE=postgres-tls" >> .env
         echo "STUNNEL_ACCEPT=5433" >> .env
         echo "STUNNEL_CONNECT=postgres:5432" >> .env
-        echo "STUNNEL_PORT=443" >> .env
+        echo "STUNNEL_PORT=5443" >> .env
+        echo "STUNNEL_IMAGE=${stunnel_image}" >> .env
+        echo "STUNNEL_PLATFORM=${stunnel_platform}" >> .env
+        echo "PG_LOCAL_PORT=15432" >> .env
         
         log_info "Generated secure POSTGRES_PASSWORD in .env"
     else
@@ -268,11 +392,22 @@ launch_vhost() {
             # Default to a dummy email or ask user. For automation, use admin@domain
             echo "EMAIL=admin@${DOMAIN}" >> .env
         fi
+        if ! grep -q "PG_LOCAL_PORT=" .env; then
+            echo "PG_LOCAL_PORT=15432" >> .env
+        fi
+        if ! grep -q "STUNNEL_IMAGE=" .env; then
+            echo "STUNNEL_IMAGE=${stunnel_image}" >> .env
+        fi
+        if ! grep -q "STUNNEL_PLATFORM=" .env; then
+            echo "STUNNEL_PLATFORM=${stunnel_platform}" >> .env
+        fi
     fi
 
     # Read final port for display (handle duplicates if any)
     STUNNEL_PORT=$(grep '^STUNNEL_PORT=' .env | tail -n 1 | cut -d '=' -f2)
-    STUNNEL_PORT=${STUNNEL_PORT:-443}
+    STUNNEL_PORT=${STUNNEL_PORT:-5443}
+    PG_LOCAL_PORT=$(grep '^PG_LOCAL_PORT=' .env | tail -n 1 | cut -d '=' -f2)
+    PG_LOCAL_PORT=${PG_LOCAL_PORT:-15432}
 
     # Read final configuration for bootstrap
     export EMAIL=$(grep '^EMAIL=' .env | cut -d '=' -f2)
@@ -293,42 +428,88 @@ launch_vhost() {
        if find_acme_certs "$DOMAIN"; then
            log_info "Using existing ACME certificates."
        else
-           log_info "ACME certificates not found. Starting Caddy Bootstrap..."
-           
-           # Ensure caddy_data volume exists
-           docker volume create caddy_data >/dev/null 2>&1 || true
-           
-           DOCKER_CMD="docker compose"
-           ! docker compose version &>/dev/null && DOCKER_CMD="docker-compose"
-           
-           $DOCKER_CMD -f docker-compose.bootstrap.yml up -d
-           log_info "Waiting for ACME certificate acquisition (60s)..."
-           
-           # Check every 10 seconds for up to 60 seconds
-           local timeout=120
-           local elapsed=0
-           while [ $elapsed -lt $timeout ]; do
-               if find_acme_certs "$DOMAIN"; then
-                   break
+           if [ "$acme_mode" = "host-caddy" ]; then
+               log_info "ACME certificates not found. Requesting via host caddy.service..."
+               if ! command_exists systemctl; then
+                   log_err "systemctl not available; cannot use host-caddy mode."
+                   exit 1
                fi
-               sleep 10
-               elapsed=$((elapsed + 10))
-               log_info "Retrying certificate check... ($elapsed/$timeout s)"
-           done
-           
-           # Check again
-           if find_acme_certs "$DOMAIN"; then
-                log_info "Bootstrap successful. ACME certificates acquired."
+               if ! systemctl is-active --quiet caddy; then
+                   log_err "caddy.service is not active, cannot use host-caddy mode."
+                   log_err "Try ACME_MODE=bootstrap or start caddy.service first."
+                   exit 1
+               fi
+
+               mkdir -p /etc/caddy/conf.d
+               cat > "/etc/caddy/conf.d/postgresql-${DOMAIN}.caddy" <<EOF
+${DOMAIN} {
+    respond "postgresql.svc.plus ACME endpoint" 200
+}
+EOF
+               if ! grep -q "/etc/caddy/conf.d/\\*.caddy" /etc/caddy/Caddyfile 2>/dev/null; then
+                   echo "" >> /etc/caddy/Caddyfile
+                   echo "import /etc/caddy/conf.d/*.caddy" >> /etc/caddy/Caddyfile
+               fi
+
+               systemctl reload caddy || systemctl restart caddy
+               log_info "Waiting for ACME certificate acquisition via host caddy (up to 180s)..."
+               local timeout=180
+               local elapsed=0
+               while [ $elapsed -lt $timeout ]; do
+                   if find_acme_certs "$DOMAIN"; then
+                       break
+                   fi
+                   sleep 10
+                   elapsed=$((elapsed + 10))
+                   log_info "Retrying certificate check... ($elapsed/$timeout s)"
+               done
+
+               if find_acme_certs "$DOMAIN"; then
+                   log_info "Host caddy ACME successful."
+               else
+                   log_err "FAIL-FAST: host caddy could not issue ACME cert for $DOMAIN."
+                   log_err "Please ensure DNS A/AAAA points to this host and ports 80/443 are reachable from Internet."
+                   systemctl status caddy --no-pager -l || true
+                   exit 1
+               fi
            else
-                log_err "FAIL-FAST: ACME certificates for $DOMAIN not found after bootstrap!"
-                log_err "Please ensure:"
-                log_err "  1. DNS is pointing to this host"
-                log_err "  2. Port 80 is open and not occupied"
-                log_err "  3. The domain name is correct"
-                $DOCKER_CMD -f docker-compose.bootstrap.yml down || true
-                exit 1
+               log_info "ACME certificates not found. Starting Caddy Bootstrap..."
+
+               # Ensure caddy_data volume exists
+               docker volume create caddy_data >/dev/null 2>&1 || true
+
+               DOCKER_CMD="docker compose"
+               ! docker compose version &>/dev/null && DOCKER_CMD="docker-compose"
+
+               $DOCKER_CMD -f docker-compose.bootstrap.yml up -d
+               log_info "Waiting for ACME certificate acquisition (60s)..."
+
+               # Check every 10 seconds for up to 120 seconds
+               local timeout=120
+               local elapsed=0
+               while [ $elapsed -lt $timeout ]; do
+                   if find_acme_certs "$DOMAIN"; then
+                       break
+                   fi
+                   sleep 10
+                   elapsed=$((elapsed + 10))
+                   log_info "Retrying certificate check... ($elapsed/$timeout s)"
+               done
+
+               # Check again
+               if find_acme_certs "$DOMAIN"; then
+                    log_info "Bootstrap successful. ACME certificates acquired."
+               else
+                    log_err "FAIL-FAST: ACME certificates for $DOMAIN not found after bootstrap!"
+                    log_err "Please ensure:"
+                    log_err "  1. DNS is pointing to this host"
+                    log_err "  2. Port 80 is open and not occupied"
+                    log_err "  3. The domain name is correct"
+                    $DOCKER_CMD -f docker-compose.bootstrap.yml down || true
+                    exit 1
+               fi
+               $DOCKER_CMD -f docker-compose.bootstrap.yml down
            fi
-           $DOCKER_CMD -f docker-compose.bootstrap.yml down
        fi
     fi
     cd ../..
@@ -366,16 +547,47 @@ launch_vhost() {
         fi
         echo "STUNNEL_KEY_FILE=$STUNNEL_KEY_FILE" >> deploy/docker/.env
     fi
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "/^STUNNEL_MODE=/d" deploy/docker/.env || true
+    else
+        sed -i "/^STUNNEL_MODE=/d" deploy/docker/.env || true
+    fi
+    echo "STUNNEL_MODE=$stunnel_mode" >> deploy/docker/.env
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "/^STUNNEL_IMAGE=/d" deploy/docker/.env || true
+    else
+        sed -i "/^STUNNEL_IMAGE=/d" deploy/docker/.env || true
+    fi
+    echo "STUNNEL_IMAGE=${stunnel_image}" >> deploy/docker/.env
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "/^STUNNEL_PLATFORM=/d" deploy/docker/.env || true
+    else
+        sed -i "/^STUNNEL_PLATFORM=/d" deploy/docker/.env || true
+    fi
+    echo "STUNNEL_PLATFORM=${stunnel_platform}" >> deploy/docker/.env
 
     # Cleanup potential docker-created directories if they exist where files should be
     # This happens if docker compose is run while variables are empty
     [ -d "deploy/docker/certs/server-cert.pem" ] && sudo rm -rf "deploy/docker/certs/server-cert.pem"
     [ -d "deploy/docker/certs/server-key.pem" ] && sudo rm -rf "deploy/docker/certs/server-key.pem"
 
-    # Try standard up, fallback to sudo -E to preserve env if needed (though .env is primary now)
-    if ! $DOCKER_CMD -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.tunnel.yml up -d; then
-         log_warn "Docker compose failed, retrying with sudo..."
-         sudo -E $DOCKER_CMD -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.tunnel.yml up -d
+    if [ "$stunnel_mode" = "host-stunnel4" ]; then
+        log_info "Starting postgres only (host stunnel4 mode)"
+        if ! $DOCKER_CMD -f deploy/docker/docker-compose.yml up -d postgres; then
+            log_warn "Docker compose failed, retrying with sudo..."
+            sudo -E $DOCKER_CMD -f deploy/docker/docker-compose.yml up -d postgres
+        fi
+        configure_host_stunnel4 "$PROJECT_ROOT" "$STUNNEL_PORT" "$PG_LOCAL_PORT" "$STUNNEL_CRT_FILE" "$STUNNEL_KEY_FILE"
+    else
+        # Docker stunnel mode must release 5443 from host stunnel4 if it exists.
+        if command_exists systemctl; then
+            sudo systemctl stop stunnel4 >/dev/null 2>&1 || true
+        fi
+        # Try standard up, fallback to sudo -E to preserve env if needed (though .env is primary now)
+        if ! $DOCKER_CMD -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.tunnel.yml up -d; then
+             log_warn "Docker compose failed, retrying with sudo..."
+             sudo -E $DOCKER_CMD -f deploy/docker/docker-compose.yml -f deploy/docker/docker-compose.tunnel.yml up -d
+        fi
     fi
 }
 
@@ -432,12 +644,14 @@ show_help() {
     echo -e "${CYAN}PostgreSQL Service Plus - Vhost Initialization Script${NC}"
     echo ""
     echo "Usage:"
-    echo "  init_vhost.sh [POSTGRES_VERSION] [DOMAIN]"
+    echo "  init_vhost.sh [POSTGRES_VERSION] [DOMAIN] [ACME_MODE] [STUNNEL_MODE]"
     echo "  init_vhost.sh reset"
     echo ""
     echo "Arguments:"
     echo "  POSTGRES_VERSION  Support: 14 | 15 | 16 | 17 | 18 (Default: 16)"
     echo "  DOMAIN            stunnel TLS endpoint (Default: current hostname)"
+    echo "  ACME_MODE         auto | bootstrap | host-caddy (Default: auto)"
+    echo "  STUNNEL_MODE      auto | docker-stunnel | host-stunnel4 (Default: auto)"
     echo ""
     echo "Commands:"
     echo "  reset             Stop all containers, remove volumes, regenerate certs, start fresh"
@@ -445,6 +659,7 @@ show_help() {
     echo ""
     echo "Examples:"
     echo "  bash scripts/init_vhost.sh 17 db.example.com"
+    echo "  bash scripts/init_vhost.sh 17 db.example.com host-caddy host-stunnel4"
     echo "  bash scripts/init_vhost.sh 16 postgres.mycompany.net"
     echo "  curl -fsSL https://.../init_vhost.sh | bash -s -- 17 db.example.com"
     echo ""
