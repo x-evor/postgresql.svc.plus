@@ -153,6 +153,48 @@ preflight() {
   fi
 }
 
+ensure_target_stunnel_image() {
+  log "Ensuring target stunnel image/platform for target architecture"
+  run_ssh "$TARGET_HOST" "sudo bash -s" <<EOS
+set -euo pipefail
+cd "$TARGET_REPO"
+ENV_FILE="deploy/docker/.env"
+[ -f "\$ENV_FILE" ] || cp deploy/docker/.env.example "\$ENV_FILE"
+
+arch="\$(uname -m)"
+current_image="\$(awk -F= '/^STUNNEL_IMAGE=/{print \$2}' "\$ENV_FILE" | tail -n1)"
+
+if [ "\$arch" = "aarch64" ] || [ "\$arch" = "arm64" ]; then
+  # Avoid amd64-only image on ARM hosts.
+  if [ -z "\$current_image" ] || [ "\$current_image" = "dweomer/stunnel:latest" ]; then
+    local_tag="stunnel-runtime:arm64-local"
+    if ! docker image inspect "\$local_tag" >/dev/null 2>&1; then
+      if docker buildx version >/dev/null 2>&1; then
+        docker buildx build --platform linux/arm64/v8 \
+          -f deploy/base-images/stunnel.Dockerfile \
+          -t "\$local_tag" \
+          --load \
+          deploy/base-images
+      else
+        docker build -f deploy/base-images/stunnel.Dockerfile -t "\$local_tag" deploy/base-images
+      fi
+    fi
+    if grep -q '^STUNNEL_IMAGE=' "\$ENV_FILE"; then
+      sed -i "s|^STUNNEL_IMAGE=.*|STUNNEL_IMAGE=\$local_tag|" "\$ENV_FILE"
+    else
+      echo "STUNNEL_IMAGE=\$local_tag" >> "\$ENV_FILE"
+    fi
+  fi
+
+  if grep -q '^STUNNEL_PLATFORM=' "\$ENV_FILE"; then
+    sed -i "s|^STUNNEL_PLATFORM=.*|STUNNEL_PLATFORM=linux/arm64/v8|" "\$ENV_FILE"
+  else
+    echo "STUNNEL_PLATFORM=linux/arm64/v8" >> "\$ENV_FILE"
+  fi
+fi
+EOS
+}
+
 init_target() {
   log "[1/5] Initializing target host with init_vhost.sh (acme-mode=${ACME_MODE})"
   case "$ACME_MODE" in
@@ -203,12 +245,17 @@ find_cert() {
 
 if [ "\$acme_mode" = "host-caddy" ] || { [ "\$acme_mode" = "auto" ] && systemctl is-active --quiet caddy; }; then
   mkdir -p /etc/caddy/conf.d
-  cat > "/etc/caddy/conf.d/postgresql-\$domain.caddy" <<EOC
+  # Keep one canonical file per domain to avoid ambiguous site definitions.
+  find /etc/caddy/conf.d -maxdepth 1 -type f -name "*\$domain*.caddy" ! -name "\$domain.caddy" -delete || true
+  cat > "/etc/caddy/conf.d/\$domain.caddy" <<EOC
 \$domain {
   respond "postgresql.svc.plus ACME endpoint" 200
 }
 EOC
-  if ! grep -q "/etc/caddy/conf.d/\\*.caddy" /etc/caddy/Caddyfile 2>/dev/null; then
+  if grep -q "^#import /etc/caddy/conf.d/\\*.caddy" /etc/caddy/Caddyfile 2>/dev/null; then
+    sed -i "s|^#import /etc/caddy/conf.d/\\*.caddy|import /etc/caddy/conf.d/*.caddy|" /etc/caddy/Caddyfile
+  fi
+  if ! grep -q "^import /etc/caddy/conf.d/\\*.caddy" /etc/caddy/Caddyfile 2>/dev/null; then
     echo "" >> /etc/caddy/Caddyfile
     echo "import /etc/caddy/conf.d/*.caddy" >> /etc/caddy/Caddyfile
   fi
@@ -265,12 +312,12 @@ if [ -n "${SOURCE_PG_PASSWORD}" ]; then
   fi
 fi
 if grep -q '^STUNNEL_PORT=' "\$ENV_FILE"; then
-  sed -i 's/^STUNNEL_PORT=.*/STUNNEL_PORT=${TARGET_TLS_PORT}/' "\$ENV_FILE"
+  sed -i "s/^STUNNEL_PORT=.*/STUNNEL_PORT=${TARGET_TLS_PORT}/" "\$ENV_FILE"
 else
-  echo 'STUNNEL_PORT=${TARGET_TLS_PORT}' >> "\$ENV_FILE"
+  echo "STUNNEL_PORT=${TARGET_TLS_PORT}" >> "\$ENV_FILE"
 fi
 cd deploy/docker
-mode="$(awk -F= '/^STUNNEL_MODE=/{print \$2; exit}' .env || true)"
+mode="$(awk -F= '/^STUNNEL_MODE=/{print $2; exit}' .env || true)"
 if [ "\$mode" = "host-stunnel4" ]; then
   docker compose -f docker-compose.yml up -d postgres
   systemctl restart stunnel4 || true
@@ -278,6 +325,9 @@ else
   docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d postgres stunnel
 fi
 EOS
+
+  ensure_target_stunnel_image
+  run_ssh "$TARGET_HOST" "sudo bash -lc 'cd ${TARGET_REPO}/deploy/docker && docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d stunnel'"
 }
 
 export_from_source() {

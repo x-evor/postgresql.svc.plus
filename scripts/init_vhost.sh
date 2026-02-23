@@ -441,12 +441,18 @@ launch_vhost() {
                fi
 
                mkdir -p /etc/caddy/conf.d
-               cat > "/etc/caddy/conf.d/postgresql-${DOMAIN}.caddy" <<EOF
+               caddy_domain_file="/etc/caddy/conf.d/${DOMAIN}.caddy"
+               # Keep only one site file for this domain to avoid ambiguous site definitions.
+               find /etc/caddy/conf.d -maxdepth 1 -type f -name "*${DOMAIN}*.caddy" ! -name "${DOMAIN}.caddy" -delete || true
+               cat > "${caddy_domain_file}" <<EOF
 ${DOMAIN} {
     respond "postgresql.svc.plus ACME endpoint" 200
 }
 EOF
-               if ! grep -q "/etc/caddy/conf.d/\\*.caddy" /etc/caddy/Caddyfile 2>/dev/null; then
+               if grep -q "^#import /etc/caddy/conf.d/\\*.caddy" /etc/caddy/Caddyfile 2>/dev/null; then
+                   sed -i "s|^#import /etc/caddy/conf.d/\\*.caddy|import /etc/caddy/conf.d/*.caddy|" /etc/caddy/Caddyfile
+               fi
+               if ! grep -q "^import /etc/caddy/conf.d/\\*.caddy" /etc/caddy/Caddyfile 2>/dev/null; then
                    echo "" >> /etc/caddy/Caddyfile
                    echo "import /etc/caddy/conf.d/*.caddy" >> /etc/caddy/Caddyfile
                fi
