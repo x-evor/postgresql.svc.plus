@@ -448,6 +448,9 @@ while IFS='|' read -r db mode f1 f2 f3; do
     docker exec "\$container" psql -U "\$pg_user" -d postgres -c "select pg_terminate_backend(pid) from pg_stat_activity where datname='\$db' and pid <> pg_backend_pid();" >/dev/null || true
     docker exec "\$container" dropdb -U "\$pg_user" --if-exists "\$db" || true
     docker exec "\$container" createdb -U "\$pg_user" "\$db"
+  else
+    # "postgres" cannot be dropped/recreated; reset public schema before restore/import.
+    docker exec "\$container" psql -U "\$pg_user" -d postgres -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public AUTHORIZATION \"\$pg_user\"; GRANT ALL ON SCHEMA public TO \"\$pg_user\"; GRANT ALL ON SCHEMA public TO PUBLIC;"
   fi
 
   if [ "\$mode" = "custom" ]; then
