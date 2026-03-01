@@ -142,8 +142,8 @@ preflight() {
   log "Reading source admin credentials from source container env"
   local src_user
   local src_pass
-  src_user="$(retry_cmd 5 run_ssh "$SOURCE_HOST" "docker inspect '$SOURCE_CONTAINER' --format '{{range .Config.Env}}{{println .}}{{end}}' | awk -F= '/^POSTGRES_USER=/{print \$2; exit}'" || true)"
-  src_pass="$(retry_cmd 5 run_ssh "$SOURCE_HOST" "docker inspect '$SOURCE_CONTAINER' --format '{{range .Config.Env}}{{println .}}{{end}}' | awk -F= '/^POSTGRES_PASSWORD=/{print \$2; exit}'" || true)"
+  src_user="$(retry_cmd 5 run_ssh "$SOURCE_HOST" "docker inspect '$SOURCE_CONTAINER' --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^POSTGRES_USER=//p' | head -n1" || true)"
+  src_pass="$(retry_cmd 5 run_ssh "$SOURCE_HOST" "docker inspect '$SOURCE_CONTAINER' --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^POSTGRES_PASSWORD=//p' | head -n1" || true)"
 
   if [[ -n "$src_user" ]]; then
     PG_USER="$src_user"
