@@ -1,30 +1,42 @@
-# 文档中心
+# PostgreSQL Service Plus / PostgreSQL 服务增强版
 
-本目录按照统一大纲整理 PostgreSQL Service Plus 的文档。若只想快速跑起来，请从“新手路径”开始。
+This `docs/` directory now has a bilingual canonical layer for the current repository state.
 
-## 快速导航
+本 `docs/` 目录现已补齐双语规范层，用于承接当前仓库状态下的核心文档。
 
-- 新手路径：`docs/getting-started/`
-- 架构设计：`docs/architecture/`
-- 使用指南：`docs/usage/`
-- 接口文档：`docs/api/`
-- 对接生态：`docs/integrations/`
-- 进阶内容：`docs/advanced/`
-- 开发与贡献：`docs/development/`
-- 运维手册：`docs/operations/`
-- 项目治理：`docs/governance/`
-- 附录：`docs/appendix/`
+## Quick Entry / 快速入口
 
-## 推荐阅读路径
+- Coverage checklist / 覆盖检查矩阵: `docs/DOC_COVERAGE.md`
+- English index / 英文入口: `docs/en/README.md`
+- 中文入口 / Chinese index: `docs/zh/README.md`
 
-1. `docs/getting-started/introduction.md`
-2. `docs/getting-started/quickstart.md`
-3. `docs/usage/deployment.md`
-4. `docs/architecture/overview.md`
-5. `docs/operations/troubleshooting.md`
-6. `docs/operations/node-consolidation-migration.md`（与 `jp-xhttp` 同机融合迁移）
+## Canonical Bilingual Pages / 双语规范页
 
-## 与旧文件的关系
+- `docs/en/architecture.md` / `docs/zh/architecture.md`
+- `docs/en/design.md` / `docs/zh/design.md`
+- `docs/en/deployment.md` / `docs/zh/deployment.md`
+- `docs/en/user-guide.md` / `docs/zh/user-guide.md`
+- `docs/en/developer-guide.md` / `docs/zh/developer-guide.md`
+- `docs/en/vibe-coding-reference.md` / `docs/zh/vibe-coding-reference.md`
 
-历史遗留的单文件文档（如 `docs/QUICKSTART.md`、`docs/ARCHITECTURE.md` 等）已用本大纲替代。
-如果你从旧链接进入，请以本目录的新结构为准。
+## Current Repo Context / 当前仓库背景
+
+- Root README: `PostgreSQL Service Plus`
+- Previous docs index: `文档中心`
+- Manifest evidence / 构建清单: repository structure and scripts only
+- Active code and ops directories / 当前主要目录: `deploy/`, `scripts/`, `tests/`, `example/`, `workflows/`
+
+## Existing Docs To Reconcile / 需要继续归并的现有文档
+
+- `ARCHITECTURE.md`
+- `COMPLETION_REPORT.md`
+- `PROJECT_DETAILS.md`
+- `PROJECT_STRUCTURE.md`
+- `QUICKSTART.md`
+- `SUMMARY.md`
+- `advanced/customization.md`
+- `advanced/performance.md`
+- `advanced/scalability.md`
+- `advanced/security.md`
+- `api/auth.md`
+- `api/endpoints.md`
