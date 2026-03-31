@@ -1,0 +1,53 @@
+name: Code Quality
+description: Run linting and basic quality checks per service/platform/environment matrix entry.
+inputs:
+  service:
+    description: Target service name
+    required: true
+  platform:
+    description: Target platform (e.g., linux/amd64)
+    required: true
+  environment:
+    description: Deployment environment (dev or prod)
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Prepare matrix context
+      id: matrix
+      uses: ./.github/actions/matrix-support
+      with:
+        service: ${{ inputs.service }}
+        platform: ${{ inputs.platform }}
+        environment: ${{ inputs.environment }}
+
+    - name: Install git-secrets
+      shell: bash
+      run: |
+        set -euo pipefail
+        git clone https://github.com/awslabs/git-secrets.git
+        sudo make install -C git-secrets
+        git secrets --install
+        git secrets --scan
+
+    - name: Go vet
+      if: inputs.service != 'dashboard'
+      shell: bash
+      run: go vet ./...
+
+    - name: Go unit tests (quality gate)
+      if: inputs.service != 'dashboard'
+      shell: bash
+      run: go test ./...
+
+    - name: Install dashboard dependencies
+      if: inputs.service == 'dashboard'
+      working-directory: dashboard
+      shell: bash
+      run: yarn install --frozen-lockfile
+
+    - name: Dashboard lint
+      if: inputs.service == 'dashboard'
+      working-directory: dashboard
+      shell: bash
+      run: yarn lint

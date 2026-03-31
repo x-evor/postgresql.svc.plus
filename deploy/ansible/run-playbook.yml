@@ -1,0 +1,9 @@
+---
+- name: Provision homepage vhosts
+  hosts: all
+  become: true
+  gather_facts: false
+  roles:
+    - vhosts/OpenResty
+    - vhosts/Redis
+    - vhosts/Postgresql

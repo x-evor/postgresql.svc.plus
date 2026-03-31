@@ -1,0 +1,11 @@
+{{- if .Values.stunnel.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "postgresql.fullname" . }}-stunnel-config
+  labels:
+    {{- include "postgresql.labels" . | nindent 4 }}
+data:
+  stunnel.conf: |
+    {{- .Values.stunnel.config | nindent 4 }}
+{{- end }}

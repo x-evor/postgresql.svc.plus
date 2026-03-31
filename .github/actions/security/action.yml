@@ -1,0 +1,76 @@
+name: Security
+description: Security scanning per service/platform/environment.
+inputs:
+  service:
+    description: Target service name
+    required: true
+  platform:
+    description: Target platform (e.g., linux/amd64)
+    required: true
+  environment:
+    description: Deployment environment (dev or prod)
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Prepare matrix context
+      id: matrix
+      uses: ./.github/actions/matrix-support
+      with:
+        service: ${{ inputs.service }}
+        platform: ${{ inputs.platform }}
+        environment: ${{ inputs.environment }}
+
+    - name: Run golangci-lint
+      if: inputs.service != 'dashboard'
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        args: ./...
+
+    - name: Install gosec
+      if: inputs.service != 'dashboard'
+      shell: bash
+      run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+    - name: Run gosec
+      if: inputs.service != 'dashboard'
+      shell: bash
+      run: gosec ./...
+
+    - name: Trivy filesystem scan
+      if: inputs.service != 'dashboard'
+      uses: aquasecurity/trivy-action@0.24.0
+      with:
+        scan-type: fs
+        scan-ref: .
+        severity: HIGH,CRITICAL
+        ignore-unfixed: true
+        format: table
+        exit-code: "0"
+
+    - name: Install dashboard dependencies
+      if: inputs.service == 'dashboard'
+      working-directory: dashboard
+      shell: bash
+      run: yarn install --frozen-lockfile
+
+    - name: Run ESLint
+      if: inputs.service == 'dashboard'
+      working-directory: dashboard
+      shell: bash
+      run: yarn lint
+
+    - name: Semgrep security rules
+      if: inputs.service == 'dashboard'
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: p/ci
+        paths: dashboard
+
+    - name: npm audit (production)
+      if: inputs.service == 'dashboard'
+      working-directory: dashboard
+      shell: bash
+      run: npm audit --production
+      continue-on-error: true

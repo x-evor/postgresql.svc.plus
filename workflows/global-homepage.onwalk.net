@@ -1,0 +1,47 @@
+# Nginx configuration for https proxy
+# HTTP 自动跳转到 HTTPS
+server {
+  listen 80;
+  server_name global-homepage.svc.plus;
+  return 301 https://global-homepage.svc.plus$request_uri;
+}
+
+# HTTPS 入口
+server {
+  listen 443 ssl http2;
+  server_name global-homepage.svc.plus;
+
+  ssl_certificate     /etc/ssl/svc.plus.pem;
+  ssl_certificate_key /etc/ssl/svc.plus.rsa.key;
+
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_ciphers HIGH:!aNULL:!MD5;
+
+  location / {
+    proxy_pass https://global-homepage.onwalk.net;
+
+    # ✅ 关键 1：开启 TLS SNI
+    proxy_ssl_server_name on;
+
+    # ✅ 关键 2：模拟浏览器请求，避免被 Cloudflare challenge
+    proxy_set_header Host global-homepage.onwalk.net;
+    proxy_set_header User-Agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36";
+    proxy_set_header Accept "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+    proxy_set_header Referer "https://global-homepage.onwalk.net/";
+
+    # ✅ 关键 3：保留访客真实 IP
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # ✅ 关键 4：HTTP/1.1 + 清除升级连接头
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+
+    # ✅ 可选超时控制
+    proxy_connect_timeout 30s;
+    proxy_send_timeout 30s;
+    proxy_read_timeout 30s;
+  }
+}
+

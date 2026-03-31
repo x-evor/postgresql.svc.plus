@@ -1,0 +1,68 @@
+name: 🐞 Bug Report
+description: Report a reproducible bug or regression in the project
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below to help us reproduce and fix the issue.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Bug summary
+      description: A short and clear summary of the issue.
+      placeholder: "e.g. Login page throws 500 when MFA is enabled"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do that triggered the bug?
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error message
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+      placeholder: "The page should display a 2FA prompt without crashing."
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened?
+      placeholder: "The server returned 500 Internal Server Error."
+
+  - type: input
+    id: version
+    attributes:
+      label: Affected version / environment
+      placeholder: "v0.5.0 / Ubuntu 22.04 / PostgreSQL 16"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / screenshots
+      render: shell
+      description: Paste any relevant console output, stack trace, or screenshots here.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues for duplicates
+          required: true
+        - label: I have attached logs or screenshots if applicable

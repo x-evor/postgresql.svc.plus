@@ -1,0 +1,81 @@
+services:
+  postgres:
+    image: postgres-extensions:${PG_MAJOR:-16}
+    container_name: postgresql-svc-plus
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    # PostgreSQL 只监听 localhost,通过 stunnel 提供外部访问
+    # 不直接暴露端口,确保所有连接都经过 TLS 加密
+    expose:
+      - "5432"
+    ports:
+      - "127.0.0.1:${PG_LOCAL_PORT:-15432}:5432"
+
+    volumes:
+      - ${PG_DATA_PATH:-/data}:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+
+    # Optional: Override default command to use custom config
+    # command: postgres -c config_file=/etc/postgresql/postgresql.conf
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -h 127.0.0.1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+    networks:
+      - postgres_network
+
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: unless-stopped
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+    networks:
+      - postgres_network
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    profiles:
+      - admin
+
+volumes:
+  pgadmin_data:
+    driver: local
+
+networks:
+  postgres_network:
+    driver: bridge

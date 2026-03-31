@@ -1,0 +1,61 @@
+# Environment files
+.env
+*.env
+!.env.example
+deploy/docker/.env
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.csr
+certs/
+!deploy/docker/generate-certs.sh
+
+# Docker volumes
+postgres_data/
+pgadmin_data/
+caddy_data/
+caddy_config/
+stunnel_logs/
+
+# Logs
+*.log
+logs/
+
+# Backup files
+*.sql
+*.dump
+backups/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Helm
+*.tgz
+charts/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts
+bin/
+dist/
+build/
+
+# Temporary scripts (for project setup)
+cleanup-old-files.sh
+organize-docs.sh
+rename-md-to-english.sh
+git-commit-feature.sh

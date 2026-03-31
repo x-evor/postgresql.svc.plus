@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: xcontrol
+      POSTGRES_USER: xcontrol
+      POSTGRES_PASSWORD: xcontrol
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  xcontrol:
+    image: ghcr.io/example/xcontrol:latest
+    environment:
+      KB_DSN: postgres://xcontrol:xcontrol@postgres:5432/xcontrol?sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+volumes:
+  pgdata:

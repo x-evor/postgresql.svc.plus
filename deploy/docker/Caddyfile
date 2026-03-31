@@ -1,0 +1,68 @@
+# Caddyfile for PostgreSQL Service Plus
+# Automatic HTTPS with Let's Encrypt
+
+{
+    # Global options
+    email {$EMAIL}
+    
+    # Enable admin API (optional)
+    # admin off
+}
+
+# PostgreSQL TCP proxy with TLS
+{$DOMAIN:db.localhost} {
+    # For HTTP-based health checks or metrics
+    handle /health {
+        respond "OK" 200
+    }
+    
+    handle /metrics {
+        # Add your metrics endpoint here
+        respond "Metrics endpoint" 200
+    }
+    
+    # Default response
+    handle {
+        respond "PostgreSQL Service - Use TCP connection on port 5432" 200
+    }
+    
+    # TLS configuration
+    tls {
+        protocols tls1.2 tls1.3
+    }
+    
+    # Logging
+    log {
+        output file /var/log/caddy/access.log
+        format json
+    }
+}
+
+# Alternative: TCP proxy for PostgreSQL (requires Caddy with layer4 plugin)
+# Uncomment if using caddy-docker with layer4 support
+# :5432 {
+#     proxy postgres:5432
+# }
+
+# pgAdmin proxy (if using --profile admin)
+pgadmin.{$DOMAIN:localhost} {
+    reverse_proxy pgadmin:80
+    
+    tls {
+        protocols tls1.2 tls1.3
+    }
+    
+    log {
+        output file /var/log/caddy/pgadmin.log
+        format json
+    }
+}
+
+# Example: Multiple database instances
+# db1.{$DOMAIN} {
+#     reverse_proxy postgres1:5432
+# }
+# 
+# db2.{$DOMAIN} {
+#     reverse_proxy postgres2:5432
+# }

@@ -1,0 +1,17 @@
+services:
+  caddy-bootstrap:
+    image: caddy:2-alpine
+    container_name: caddy-bootstrap
+    ports:
+      - "80:80"
+    environment:
+      - DOMAIN=${DOMAIN}
+      - EMAIL=${EMAIL}
+    volumes:
+      - caddy_data:/data
+    command: >
+      caddy reverse-proxy --from ${DOMAIN} --to 127.0.0.1:2019
+
+volumes:
+  caddy_data:
+    external: true

@@ -1,0 +1,90 @@
+name: Build
+description: Build artifacts for each service and platform with optional container publishing.
+inputs:
+  service:
+    description: Target service name
+    required: true
+  platform:
+    description: Target platform (e.g., linux/amd64)
+    required: true
+  environment:
+    description: Deployment environment (dev or prod)
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Prepare matrix context
+      id: matrix
+      uses: ../matrix-support
+      with:
+        service: ${{ inputs.service }}
+        platform: ${{ inputs.platform }}
+        environment: ${{ inputs.environment }}
+        enable_docker: 'true'
+
+    - name: Cache build artifacts
+      uses: actions/cache@v4
+      with:
+        path: |
+          build/${{ inputs.service }}
+          dashboard/.next
+        key: build-${{ inputs.service }}-${{ inputs.platform }}-${{ hashFiles('**/go.sum', 'dashboard/yarn.lock') }}-${{ inputs.environment }}
+        restore-keys: |
+          build-${{ inputs.service }}-${{ inputs.platform }}-
+          build-${{ inputs.service }}-
+
+    - name: Prepare Go toolchain
+      if: inputs.service != 'dashboard'
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+        cache: true
+
+    - name: Build Go binaries
+      if: inputs.service != 'dashboard'
+      shell: bash
+      run: |
+        set -euo pipefail
+        goos="${{ steps.matrix.outputs.goos }}"
+        goarch="${{ steps.matrix.outputs.goarch }}"
+        mkdir -p build/${{ inputs.service }}/"${goos}-${goarch}"
+        declare -a targets
+        if [[ "${{ inputs.service }}" == "rag-server" ]]; then
+          targets=("rag-server/cmd/xcontrol-server" "rag-server/cmd/rag-server-cli")
+        elif [[ "${{ inputs.service }}" == "account" ]]; then
+          targets=("account/cmd/accountsvc")
+        else
+          targets=("./...")
+        fi
+        for target in "${targets[@]}"; do
+          binary_name=$(basename "$target")
+          GOOS="$goos" GOARCH="$goarch" go build -o build/${{ inputs.service }}/"${goos}-${goarch}"/"${binary_name}" "$target"
+        done
+
+    - name: Upload Go artifacts
+      if: inputs.service != 'dashboard'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.service }}-${{ inputs.platform }}-${{ inputs.environment }}
+        path: build/${{ inputs.service }}/
+
+    - name: Install dashboard dependencies
+      if: inputs.service == 'dashboard'
+      working-directory: dashboard
+      shell: bash
+      run: yarn install --frozen-lockfile
+
+    - name: Build dashboard
+      if: inputs.service == 'dashboard'
+      working-directory: dashboard
+      shell: bash
+      env:
+        NEXT_PUBLIC_ENV: ${{ inputs.environment }}
+      run: yarn build
+
+    - name: Upload dashboard build output
+      if: inputs.service == 'dashboard'
+      uses: actions/upload-artifact@v4
+      with:
+        name: dashboard-${{ inputs.platform }}-${{ inputs.environment }}
+        path: dashboard/.next

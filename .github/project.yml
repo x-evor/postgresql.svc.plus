@@ -1,0 +1,63 @@
+# .github/project.yml
+
+title: "Light-IDP OIDC/LDAP Stabilization"
+short_description: "MVP OIDC + Session + Config, then Stability: Store, LDAP, Tests"
+
+project:
+  owner: svc-design
+  repo: XControl
+  public: false
+
+fields:
+  milestone:
+    type: single_select
+    options: ["MVP", "Stability"]
+  priority:
+    type: single_select
+    options: ["P0", "P1", "P2"]
+  status:
+    type: status
+    options: ["Todo", "In Progress", "Done"]
+
+views:
+  - name: "Kanban"
+    type: board
+    group_by: "status"
+  - name: "MVP (Table)"
+    type: table
+    filter:
+      milestone: "MVP"
+  - name: "Stability (Table)"
+    type: table
+    filter:
+      milestone: "Stability"
+
+items:
+  # Milestone 1 (MVP)
+  - ref: 1
+    title: "Implement OIDC Handlers"
+    status: "Todo"
+    milestone: "MVP"
+    note: "authorize/token/userinfo/discovery/jwks/logout"
+  - ref: 2
+    title: "Add Session Middleware"
+    status: "Todo"
+    milestone: "MVP"
+  - ref: 5
+    title: "Validate and Extend Config"
+    status: "Todo"
+    milestone: "MVP"
+
+  # Milestone 2 (Stability)
+  - ref: 3
+    title: "Thread-safe Persistent Store"
+    status: "Todo"
+    milestone: "Stability"
+  - ref: 4
+    title: "Improve LDAP Sync Robustness"
+    status: "Todo"
+    milestone: "Stability"
+  - ref: 6
+    title: "Introduce Unit Tests"
+    status: "Todo"
+    milestone: "Stability"

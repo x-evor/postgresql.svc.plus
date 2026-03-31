@@ -1,0 +1,52 @@
+name: Test
+description: Run service-specific tests.
+inputs:
+  service:
+    description: Target service name
+    required: true
+  platform:
+    description: Target platform (e.g., linux/amd64)
+    required: true
+  environment:
+    description: Deployment environment (dev or prod)
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Prepare matrix context
+      id: matrix
+      uses: ./.github/actions/matrix-support
+      with:
+        service: ${{ inputs.service }}
+        platform: ${{ inputs.platform }}
+        environment: ${{ inputs.environment }}
+
+    - name: Run Go integration tests
+      if: inputs.service != 'dashboard'
+      shell: bash
+      run: |
+        set -euo pipefail
+        go test ./... -run Integration -count=1
+
+    - name: Install dashboard dependencies
+      if: inputs.service == 'dashboard'
+      working-directory: dashboard
+      shell: bash
+      run: yarn install --frozen-lockfile
+
+    - name: Run dashboard unit tests
+      if: inputs.service == 'dashboard'
+      working-directory: dashboard
+      shell: bash
+      env:
+        NODE_ENV: ${{ inputs.environment }}
+      run: yarn test:unit
+
+    - name: Run dashboard e2e tests
+      if: inputs.service == 'dashboard'
+      working-directory: dashboard
+      shell: bash
+      env:
+        PORT: 3100
+        NODE_ENV: ${{ inputs.environment }}
+      run: yarn test:e2e

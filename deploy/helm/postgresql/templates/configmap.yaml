@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "postgresql.fullname" . }}-config
+  labels:
+    {{- include "postgresql.labels" . | nindent 4 }}
+data:
+  postgresql.conf: |
+    {{- .Values.postgresql.config | nindent 4 }}
+  
+  {{- if .Values.postgresql.pgHba }}
+  pg_hba.conf: |
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+    # Default entries
+    local   all             all                                     trust
+    host    all             all             127.0.0.1/32            trust
+    host    all             all             ::1/128                 trust
+    host    all             all             0.0.0.0/0               md5
+    host    all             all             ::/0                    md5
+    
+    # Custom entries
+    {{- .Values.postgresql.pgHba | nindent 4 }}
+  {{- end }}

@@ -1,0 +1,213 @@
+# Default values for postgresql chart
+
+# Image configuration
+image:
+  repository: postgres-extensions
+  tag: "16"
+  pullPolicy: IfNotPresent
+
+# Image pull secrets for private registries
+imagePullSecrets: []
+
+# Override name
+nameOverride: ""
+fullnameOverride: ""
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 999
+
+# Container security context
+securityContext:
+  runAsUser: 999
+  runAsNonRoot: true
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 5432
+  annotations: {}
+
+# Ingress (not typically used for PostgreSQL, but available)
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+
+# PostgreSQL authentication
+auth:
+  username: postgres
+  password: ""  # Set this or use existingSecret
+  database: postgres
+  existingSecret: ""  # Name of existing secret with password
+  secretKey: "password"  # Key in the secret
+
+# PostgreSQL configuration
+postgresql:
+  # Custom postgresql.conf settings
+  config: |
+    shared_buffers = 256MB
+    effective_cache_size = 1GB
+    work_mem = 16MB
+    maintenance_work_mem = 64MB
+    max_connections = 100
+    wal_buffers = 16MB
+    checkpoint_completion_target = 0.9
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+    log_min_duration_statement = 1000
+  
+  # Custom pg_hba.conf entries (appended to defaults)
+  pgHba: |
+    # Custom entries
+    # host all all 0.0.0.0/0 md5
+
+# Initialization scripts
+initScripts:
+  enabled: true
+  # Scripts will be created from the scripts below
+  scripts:
+    01-init-extensions.sql: |
+      CREATE EXTENSION IF NOT EXISTS vector;
+      CREATE EXTENSION IF NOT EXISTS pg_jieba;
+      CREATE EXTENSION IF NOT EXISTS pgmq;
+      CREATE EXTENSION IF NOT EXISTS pg_trgm;
+      CREATE EXTENSION IF NOT EXISTS hstore;
+      CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+# Persistence
+persistence:
+  enabled: true
+  storageClass: ""  # Use default storage class
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
+  annotations: {}
+  selector: {}
+
+# Resource limits
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+# Liveness probe
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+# Readiness probe
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+  successThreshold: 1
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Metrics (for Prometheus)
+metrics:
+  enabled: false
+  image:
+    repository: prometheuscommunity/postgres-exporter
+    tag: v0.15.0
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 9187
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9187"
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Backup configuration (optional)
+backup:
+  enabled: false
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: 7  # Keep 7 days of backups
+  storageClass: ""
+  size: 20Gi
+
+# TLS/SSL configuration
+tls:
+  enabled: false
+  certificatesSecret: ""  # Name of secret containing tls.crt and tls.key
+  certFilename: "tls.crt"
+  certKeyFilename: "tls.key"
+  certCAFilename: "ca.crt"
+
+# Stunnel sidecar for TLS over TCP
+stunnel:
+  enabled: false
+  image:
+    repository: dweomer/stunnel
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 5433
+  certificatesSecret: ""  # Name of secret containing stunnel certificates
+  config: |
+    [postgres-tunnel]
+    client = no
+    accept = 0.0.0.0:5433
+    connect = 127.0.0.1:5432
+    cert = /etc/stunnel/certs/server-cert.pem
+    key = /etc/stunnel/certs/server-key.pem
+    sslVersion = TLSv1.2
+    options = NO_SSLv2
+    options = NO_SSLv3
+    ciphers = HIGH:!aNULL:!MD5
+
+# NetworkPolicy
+networkPolicy:
+  enabled: false
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+      - podSelector: {}
+      ports:
+      - protocol: TCP
+        port: 5432
+
+# PodDisruptionBudget
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+  # maxUnavailable: 1

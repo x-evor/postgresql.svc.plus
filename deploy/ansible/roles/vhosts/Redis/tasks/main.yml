@@ -1,0 +1,4 @@
+---
+- name: Placeholder Redis deployment
+  ansible.builtin.debug:
+    msg: "Applying Redis configuration for {{ inventory_hostname }}"

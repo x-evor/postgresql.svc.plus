@@ -1,0 +1,23 @@
+image:
+  repository: ghcr.io/example/xcontrol
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+postgresql:
+  enabled: true
+  image: postgres:16
+  auth:
+    user: xcontrol
+    password: xcontrol
+    database: xcontrol
+
+externalPostgresql:
+  enabled: false
+  host: ""
+  user: ""
+  password: ""
+  database: ""

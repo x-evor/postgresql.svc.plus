@@ -1,0 +1,8 @@
+protocols = imap pop3
+ssl = required
+
+ssl_cert = </etc/letsencrypt/live/{{MAIL_HOSTNAME}}/fullchain.pem
+ssl_key  = </etc/letsencrypt/live/{{MAIL_HOSTNAME}}/privkey.pem
+
+auth_mechanisms = plain login
+disable_plaintext_auth = yes

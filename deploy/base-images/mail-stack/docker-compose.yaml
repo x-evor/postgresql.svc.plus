@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+      - ./nginx-default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot:latest
+    command: certonly --webroot -w /var/www/certbot \
+      -d smtp.svc.plus \
+      --non-interactive --agree-tos \
+      -m admin@svc.plus
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+    depends_on:
+      - nginx
+
+  chasquid:
+    build: ./chasquid
+    environment:
+      MAIL_HOSTNAME: smtp.svc.plus
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+    ports:
+      - "25:25"
+      - "465:465"
+      - "587:587"
+    restart: unless-stopped
+
+  dovecot:
+    build: ./dovecot
+    environment:
+      MAIL_HOSTNAME: smtp.svc.plus
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+    ports:
+      - "993:993"
+    restart: unless-stopped
+
+volumes:
+  letsencrypt:

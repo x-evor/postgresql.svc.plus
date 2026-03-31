@@ -1,0 +1,9 @@
+{
+  "ssh-manager": {
+    "command": "node",
+    "args": ["/tmp/mcp-ssh-manager/node_modules/mcp-ssh-manager/src/index.js"],
+    "env": {
+      "DOTENV_CONFIG_PATH": ".env"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+apiVersion: v2
+name: postgresql
+description: PostgreSQL with extensions (pgvector, pg_jieba, pgmq) for modern applications
+type: application
+version: 1.0.0
+appVersion: "16.4"
+keywords:
+  - postgresql
+  - database
+  - vector
+  - search
+  - queue
+home: https://github.com/your-org/postgresql.svc.plus
+sources:
+  - https://github.com/your-org/postgresql.svc.plus
+maintainers:
+  - name: Cloud-Neutral Toolkit
+    email: admin@example.com
+icon: https://www.postgresql.org/media/img/about/press/elephant.png

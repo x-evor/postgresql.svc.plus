@@ -1,0 +1,106 @@
+name: Matrix Support
+description: Common setup for matrix-driven workflows with language and cache bootstrapping.
+inputs:
+  service:
+    description: Target service name
+    required: true
+  platform:
+    description: Target platform (e.g., linux/amd64)
+    required: true
+  environment:
+    description: Deployment environment (dev or prod)
+    required: true
+  enable_docker:
+    description: Enable Docker buildx/QEMU setup
+    required: false
+    default: 'false'
+outputs:
+  goos:
+    description: Derived GOOS from the platform input
+    value: ${{ steps.platforms.outputs.goos }}
+  goarch:
+    description: Derived GOARCH from the platform input
+    value: ${{ steps.platforms.outputs.goarch }}
+  is_prod:
+    description: Whether the environment is prod or the ref is a tag
+    value: ${{ steps.flags.outputs.is_prod }}
+  target_platforms:
+    description: Platform list for builds (single in dev, multi-arch in prod)
+    value: ${{ steps.flags.outputs.target_platforms }}
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+    
+      uses: actions/checkout@v4
+
+    - name: Derive platform matrix values
+      id: platforms
+      shell: bash
+      run: |
+        set -euo pipefail
+        platform="${{ inputs.platform }}"
+        goos="${platform%%/*}"
+        goarch="${platform##*/}"
+        echo "goos=${goos}" >> "$GITHUB_OUTPUT"
+        echo "goarch=${goarch}" >> "$GITHUB_OUTPUT"
+
+    - name: Resolve environment flags
+      id: flags
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [[ "${{ inputs.environment }}" == "prod" || "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
+          echo "is_prod=true" >> "$GITHUB_OUTPUT"
+          echo "target_platforms=linux/amd64,linux/arm64" >> "$GITHUB_OUTPUT"
+        else
+          echo "is_prod=false" >> "$GITHUB_OUTPUT"
+          echo "target_platforms=${{ inputs.platform }}" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Set up Go
+      if: inputs.service != 'dashboard'
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+        cache: true
+
+    - name: Cache Go build data
+      if: inputs.service != 'dashboard'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: go-${{ inputs.service }}-${{ inputs.platform }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-${{ inputs.service }}-${{ inputs.platform }}-
+          go-${{ inputs.service }}-
+
+    - name: Set up Node.js
+      if: inputs.service == 'dashboard'
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: yarn
+        cache-dependency-path: dashboard/yarn.lock
+
+    - name: Cache dashboard artifacts
+      if: inputs.service == 'dashboard'
+      uses: actions/cache@v4
+      with:
+        path: |
+          dashboard/.next/cache
+          ~/.cache/yarn
+        key: dashboard-${{ inputs.platform }}-${{ hashFiles('dashboard/yarn.lock') }}
+        restore-keys: |
+          dashboard-${{ inputs.platform }}-
+          dashboard-
+
+    - name: Enable Docker build tooling
+      if: inputs.enable_docker == 'true'
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up buildx
+      if: inputs.enable_docker == 'true'
+      uses: docker/setup-buildx-action@v3

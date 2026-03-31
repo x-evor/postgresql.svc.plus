@@ -1,0 +1,94 @@
+name: "📘 Development Roadmap Task"
+description: "用于跟踪开发阶段任务、依赖关系与交付进度的标准模板（通用版）"
+title: "[Task] "
+labels:
+  - "roadmap"
+  - "development"
+  - "tracking"
+
+body:
+  - type: dropdown
+    id: task_type
+    attributes:
+      label: "🧩 任务类型 / Task Type"
+      description: "请选择此 Issue 的任务类别"
+      options:
+        - label: "Feature — 新功能开发"
+        - label: "Improvement — 功能优化 / 重构"
+        - label: "Bugfix — 问题修复 / 技术债清理"
+        - label: "Documentation — 文档编写 / 更新"
+        - label: "Testing — 自动化测试 / 覆盖率提升"
+        - label: "Release — 打包 / 版本发布 / 部署"
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: "📋 概要描述 / Summary"
+      description: "简要说明任务目标、背景与核心改动（中英文均可）"
+      placeholder: "e.g. 实现用户角色与权限体系；支持前端展示角色徽章与管理面板入口。"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: dependencies
+    attributes:
+      label: "🔗 依赖任务 / Dependencies"
+      description: "选择本任务依赖的上游任务（可多选，无则留空）"
+      multiple: true
+      options:
+        - label: "None"
+        - label: "Database Migration"
+        - label: "API Design"
+        - label: "Backend Service"
+        - label: "Frontend Integration"
+        - label: "Testing & QA"
+
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: "🎯 交付内容 / Deliverables"
+      description: "列出任务完成后预期的可验证成果或文件路径"
+      placeholder: "- 新增 /internal/service/user_metrics.go\n- 更新 /ui/dashboard/pages/admin.tsx\n- 补充 /docs/api/users.md"
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "✅ 验收标准 / Acceptance Criteria"
+      description: "描述完成定义 (Definition of Done)，包括代码、测试、文档与功能验证。"
+      placeholder: "- 单元测试通过率 ≥ 80%\n- 所有 CI 检查通过\n- 功能验收测试结果符合预期\n- 文档已更新并合并至主分支"
+
+  - type: input
+    id: milestone
+    attributes:
+      label: "🗓️ 里程碑 / Milestone"
+      description: "对应版本或阶段（例如 v0.6.0 或 “Phase 2”）"
+      placeholder: "v0.6.0"
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "🧭 模块领域 / Area"
+      description: "标记所属系统或模块"
+      multiple: true
+      options:
+        - label: "backend"
+        - label: "frontend"
+        - label: "api"
+        - label: "database"
+        - label: "infra"
+        - label: "ui"
+        - label: "auth"
+        - label: "metrics"
+        - label: "documentation"
+        - label: "testing"
+        - label: "ci-cd"
+        - label: "release"
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: "⚠️ 风险与备注 / Risks & Notes"
+      description: "记录技术风险、依赖约束或设计决策"
+      placeholder: "- 依赖数据库 schema 迁移\n- 与其他分支存在冲突风险\n- 需在部署前完成性能回归测试"

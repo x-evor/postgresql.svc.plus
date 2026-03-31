@@ -1,0 +1,37 @@
+name: "Cloud-Neutral Auto Tag"
+description: "Generate Docker tags for main, release, PR and dev branches"
+inputs:
+  image:
+    description: "Base image name (e.g. ghcr.io/.../image)"
+    required: true
+
+outputs:
+  tags:
+    description: "Generated Docker tags"
+    value: ${{ steps.meta.outputs.tags }}
+  labels:
+    description: "Generated Docker labels"
+    value: ${{ steps.meta.outputs.labels }}
+
+runs:
+  using: composite
+  steps:
+    - name: Generate metadata (auto tags)
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ inputs.image }}
+
+        tags: |
+          # main → latest
+          type=raw,enable=${{ github.ref == 'refs/heads/main' }},value=latest
+
+          # release tag（v1.2.3）
+          type=ref,event=tag
+          type=semver,pattern={{version}}
+
+          # PR → pr-123
+          type=raw,enable=${{ startsWith(github.ref, 'refs/pull/') }},value=pr-${{ github.event.pull_request.number }}
+
+          # dev/feature branches → branch name
+          type=ref,event=branch

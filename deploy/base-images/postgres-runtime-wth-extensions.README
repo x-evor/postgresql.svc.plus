@@ -1,0 +1,32 @@
+# TL;DR – PostgreSQL Multi-Model Runtime
+
+A lightweight PostgreSQL build providing **Search + Vector + KV + MQ + JSONB**
+as a unified data engine for CloudNeutral-Suite applications.
+
+## Includes
+- **pg_jieba** – Chinese full-text tokenizer
+- **pg_trgm** – fuzzy search and typo tolerance
+- **pgvector** – embeddings and semantic search
+- **pgmq** – lightweight message queue (Kafka-lite)
+- **JSONB + GIN** – document store and structured filtering
+- **hstore + UNLOGGED tables** – high-speed key/value cache
+
+## Use Cases
+- Documentation, product, and FAQ search
+- RAG and embedding-based retrieval
+- Application-level KV/session/cache
+- Lightweight event queues and workflows
+- JSONB content and metadata storage
+- Hybrid keyword + semantic search
+
+## Not Included
+Platform-level or DBA-oriented extensions are intentionally excluded:
+- timescaledb
+- pg_partman
+- pg_cron
+- pg_net
+
+## Why
+Keeps the runtime focused, predictable, and portable —
+a single ACID engine replacing MongoDB + Redis + Kafka + Elasticsearch + Pinecone
+for application-scale workloads.

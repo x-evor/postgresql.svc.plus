@@ -1,0 +1,3 @@
+[submodule "dashboard/packages/neurapress"]
+path = dashboard/packages/neurapress
+url = https://github.com/tianyaxiang/neurapress.git

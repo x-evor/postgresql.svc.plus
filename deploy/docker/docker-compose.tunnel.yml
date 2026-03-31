@@ -1,0 +1,62 @@
+# =============================================================================
+# Docker Compose - Stunnel Server Mode (PostgreSQL TLS Tunnel)
+# =============================================================================
+#
+# SERVER-SIDE ARCHITECTURE:
+#   External Client → TLS:5443 → stunnel (server) → postgres:5432
+#
+# This configuration deploys the SERVER side of the PostgreSQL TLS tunnel.
+# Clients connect to this server using stunnel client configuration.
+#
+# CLIENT-SIDE ARCHITECTURE (for reference):
+#   App (127.0.0.1:15432) → stunnel (client) → Remote TLS (postgresql.svc.plus:5443)
+#
+# =============================================================================
+
+services:
+  stunnel:
+    image: ${STUNNEL_IMAGE:-dweomer/stunnel:latest}
+    platform: ${STUNNEL_PLATFORM:-linux/amd64}
+    container_name: stunnel-server
+    restart: unless-stopped
+
+    ports:
+      # TLS encrypted port - External access endpoint
+      # Clients connect here via TLS
+      - "${STUNNEL_PORT:-5443}:5433"
+
+    environment:
+      STUNNEL_SERVICE: ${STUNNEL_SERVICE:-postgres-tls-server}
+      STUNNEL_ACCEPT: ${STUNNEL_ACCEPT:-5433}
+      STUNNEL_CONNECT: ${STUNNEL_CONNECT:-postgres:5432}
+      STUNNEL_CRONTAB: "" # Suppress potential crontab errors
+
+    volumes:
+      - ./stunnel-server.conf:/etc/stunnel/stunnel.conf:ro
+      - ${STUNNEL_CRT_FILE:-./certs/server-cert.pem}:/etc/stunnel/certs/server-cert.pem:ro
+      - ${STUNNEL_KEY_FILE:-./certs/server-key.pem}:/etc/stunnel/certs/server-key.pem:ro
+      - stunnel_logs:/var/log/stunnel
+      # Optional: mount caddy_data for certificate access if using Caddy for ACME
+      - caddy_data:/caddy_data:ro
+
+    networks:
+      - postgres_network
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z 127.0.0.1 5433 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # Security: Run as non-root user (if image supports)
+    # user: "stunnel:stunnel"
+
+volumes:
+  stunnel_logs:
+    driver: local
+  caddy_data:
+    external: true # Expects caddy to manage this volume (for ACME certificates)

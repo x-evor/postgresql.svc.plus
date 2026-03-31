@@ -1,0 +1,11 @@
+hostname = "{{MAIL_HOSTNAME}}"
+
+submission_address = ":587"
+smtps_address      = ":465"
+
+dovecot_auth = true
+
+tls {
+  cert_file = "/etc/chasquid/certs/fullchain.pem"
+  key_file  = "/etc/chasquid/certs/privkey.pem"
+}

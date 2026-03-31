@@ -1,0 +1,4 @@
+---
+- name: Placeholder OpenResty deployment
+  ansible.builtin.debug:
+    msg: "Applying OpenResty configuration for {{ inventory_hostname }}"

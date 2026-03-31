@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xcontrol
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: xcontrol
+  template:
+    metadata:
+      labels:
+        app: xcontrol
+    spec:
+      containers:
+        - name: xcontrol
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- if .Values.postgresql.enabled }}
+            - name: KB_DSN
+              value: "postgres://{{ .Values.postgresql.auth.user }}:{{ .Values.postgresql.auth.password }}@xcontrol-postgres:5432/{{ .Values.postgresql.auth.database }}?sslmode=disable"
+            {{- else if .Values.externalPostgresql.enabled }}
+            - name: KB_DSN
+              value: "postgres://{{ .Values.externalPostgresql.user }}:{{ .Values.externalPostgresql.password }}@{{ .Values.externalPostgresql.host }}/{{ .Values.externalPostgresql.database }}"
+            {{- end }}
+          ports:
+            - containerPort: 8080

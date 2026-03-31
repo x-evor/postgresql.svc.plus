@@ -1,0 +1,48 @@
+name: Deploy
+description: Coordinate deployments per service/environment.
+inputs:
+  service:
+    description: Target service name
+    required: true
+  platform:
+    description: Target platform (e.g., linux/amd64)
+    required: true
+  environment:
+    description: Deployment environment (dev or prod)
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Prepare matrix context
+      id: matrix
+      uses: ./.github/actions/matrix-support
+      with:
+        service: ${{ inputs.service }}
+        platform: ${{ inputs.platform }}
+        environment: ${{ inputs.environment }}
+
+    - name: Prepare rollout context
+      id: context
+      shell: bash
+      run: |
+        set -euo pipefail
+        echo "service=${{ inputs.service }}" >> "$GITHUB_OUTPUT"
+        echo "environment=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
+        echo "platform=${{ inputs.platform }}" >> "$GITHUB_OUTPUT"
+        echo "release_channel=${{ steps.matrix.outputs.is_prod == 'true' && 'prod' || 'dev' }}" >> "$GITHUB_OUTPUT"
+
+    - name: Deploy placeholder
+      shell: bash
+      env:
+        TARGET_ENV: ${{ steps.context.outputs.environment }}
+        TARGET_SERVICE: ${{ steps.context.outputs.service }}
+        TARGET_PLATFORM: ${{ steps.context.outputs.platform }}
+        RELEASE_CHANNEL: ${{ steps.context.outputs.release_channel }}
+      run: |
+        echo "Deploying ${TARGET_SERVICE} (${TARGET_PLATFORM}) to ${TARGET_ENV} namespace via ${RELEASE_CHANNEL} rollout"
+        echo "Hook in Helm/kubectl/ArgoCD rollouts here"
+
+    - name: Rollback plan
+      shell: bash
+      run: |
+        echo "Rollback can be re-run per matrix entry by dispatching with allow_deploy=true"

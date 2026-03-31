@@ -1,0 +1,25 @@
+---
+- name: Deploy XControl on VM
+  hosts: all
+  become: true
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Run XControl container
+      community.docker.docker_container:
+        name: xcontrol
+        image: ghcr.io/example/xcontrol:latest
+        ports:
+          - "8080:8080"
+        env:
+          KB_DSN: "postgres://user:pass@db:5432/xcontrol?sslmode=disable"

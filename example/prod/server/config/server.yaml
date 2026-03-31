@@ -1,0 +1,51 @@
+global:
+  redis:
+    addr: "127.0.0.1:6379"
+    password: ""
+  vectordb:
+    pgurl: "postgres://shenlan:password@127.0.0.1:5432/postgres"
+  datasources:
+    - name: Xstream
+      repo: https://github.com/svc-design/Xstream
+      path: docs
+    - name: XControl
+      repo: https://github.com/svc-design/XControl
+      path: docs
+    - name: documents
+      repo: https://github.com/svc-design/documents
+      path: /
+sync:
+  repo:
+    proxy: socks5://127.0.0.1:1080  # 仅在同步仓库时使用代理
+
+provider:
+  - name: ollama
+    endpoint: http://localhost:11434
+    models:
+      - 'gpt-oss:20b'
+  - name: chutes
+    endpoint: https://llm.chutes.ai/v1
+    token: "cpk_xxxxxxxxxxxxxxxxxx"
+    models:
+      - 'moonshotai/Kimi-K2-Instruct'
+
+embedding:
+  endpoint: https://chutes-baai-bge-m3.chutes.ai/embed
+  token: "cpk_xxxxxxxxxxxxxxxxxx"
+  dimension: 0                 # 0 = 首次响应自动探测维度
+  rate_limit_tpm: 120000
+  max_batch: 64
+  max_chars: 8000
+
+chunking:
+  max_tokens: 800
+  overlap_tokens: 80
+  prefer_heading_split: true
+  include_exts: [".md", ".mdx"]
+  ignore_dirs: [".git", "node_modules", "dist", "build"]
+  embed_toc: true
+
+api:
+  askai:
+    timeout: 100
+    retries: 3

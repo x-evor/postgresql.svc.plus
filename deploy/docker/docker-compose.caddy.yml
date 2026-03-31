@@ -1,0 +1,32 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy-proxy
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+    networks:
+      - postgres_network
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      - DOMAIN=${CADDY_DOMAIN:-db.localhost}
+      - EMAIL=${CADDY_EMAIL:-admin@example.com}
+
+volumes:
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local

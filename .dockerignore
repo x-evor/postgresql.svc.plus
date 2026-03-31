@@ -1,0 +1,81 @@
+# Git
+.git
+.gitignore
+.gitmodules
+
+# Documentation
+*.md
+docs/
+example/
+
+# CI/CD
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts
+bin/
+dist/
+build/
+
+# Node.js (if any)
+node_modules/
+npm-debug.log
+
+# Python (if any)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Deployment configs (not needed in image)
+deploy/docker/
+deploy/helm/
+deploy/ansible/
+deploy/charts/
+deploy/nginx/
+deploy/openresty/
+deploy/nextjs/
+deploy/nerdctl-compose/
+
+# Keep only base-images for context
+!deploy/base-images/
+
+# Environment files
+.env
+*.env
+!.env.example
+
+# Certificates
+*.pem
+*.key
+*.crt
+certs/
+
+# Backups
+*.sql
+*.dump
+backups/
+
+# Tests
+tests/
+*.test

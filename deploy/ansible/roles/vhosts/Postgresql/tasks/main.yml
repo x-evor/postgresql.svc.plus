@@ -1,0 +1,4 @@
+---
+- name: Placeholder PostgreSQL deployment
+  ansible.builtin.debug:
+    msg: "Applying PostgreSQL configuration for {{ inventory_hostname }}"
