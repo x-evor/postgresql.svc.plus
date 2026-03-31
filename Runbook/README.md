@@ -5,8 +5,6 @@
 ## 📚 文档分类
 
 ### 🔧 部署相关
-- [Syncthing + GCSfuse 存储同步架构 (取代 JuiceFS)](Syncthing-GCSfuse-Storage-Architecture.md)
-- [PostgreSQL All-in-One 迁移验收与操作 Runbook](PostgreSQL-All-in-One-Migration-Runbook.md)
 - 部署流程
 - 环境配置
 - 依赖管理
