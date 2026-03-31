@@ -17,6 +17,12 @@
 - `account` 与 `knowledge_db` 的表级对象数和逐表 `count(*)` 已与源机对齐
 - 目标机没有 `JuiceFS`
 
+最后更新时间：2026-03-31
+适用主机：
+
+- 源机：`root@jp-xhttp.svc.plus`
+- 目标机：`root@jp-xhttp-contabo.svc.plus`
+
 ## 验收结果模板
 
 可直接发群：
