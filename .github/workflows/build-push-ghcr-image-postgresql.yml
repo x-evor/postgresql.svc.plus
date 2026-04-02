@@ -51,13 +51,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check Out Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
       - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@21162887f0d6e25b4e8eafb0cf44cf9bf7f6acd3
 
       - name: Log In To GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@bb555fc48dca4deb5f227b07c7304c673b5708f0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ vars.GHCR_USERNAME || github.repository_owner }}
@@ -65,7 +65,7 @@ jobs:
 
       - name: Compute Image Tags
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c3b064c6d7c32446d6bc214ea075f1caad2de35a
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -74,7 +74,7 @@ jobs:
             type=raw,value=latest,enable=${{ inputs.push_latest }}
 
       - name: Build And Push Image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@83bfd93ab480705a7b99a2ed02765137f5ab55ba
         with:
           context: deploy/base-images
           file: deploy/base-images/postgres-runtime-wth-extensions.Dockerfile

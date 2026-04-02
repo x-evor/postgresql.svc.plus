@@ -1,6 +1,0 @@
-apiVersion: v2
-name: xcontrol
-version: 0.1.0
-description: XControl platform chart
-type: application
-appVersion: "1.0"
