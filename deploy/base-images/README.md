@@ -8,7 +8,7 @@ service-specific images can build faster and remain consistent.
 
 - **OpenResty + GeoIP** (`openresty-geoip.Dockerfile`): OpenResty with GeoIP2
   libraries and `lua-resty-maxminddb` for MaxMind database lookups.
-- **PostgreSQL 16 + extensions** (`postgres-extensions.Dockerfile`): PostgreSQL
+- **PostgreSQL 16 + extensions** (`postgres-runtime-wth-extensions.Dockerfile`): PostgreSQL
   with `pgvector`, `pg_jieba`, and `pg_cache` compiled into the server for
   vector search and full-text tokenization.
 - **Go 1.23 builder** (`go-builder.Dockerfile`): Ubuntu 24.04 with the Go
@@ -68,7 +68,7 @@ docker buildx build --platform linux/amd64,linux/arm64/v8 \
 Each target accepts an optional tag override, for example:
 
 ```bash
-make docker-postgres-extensions POSTGRES_EXT_IMAGE=my-registry/postgres-extensions:16
+make docker-postgres-extensions POSTGRES_EXT_IMAGE=my-registry/postgresql-svc-plus:16
 
 # Go builder (Go 1.23 + build tools)
 make docker-go-builder GO_BUILDER_IMAGE=my-registry/go-builder:1.23

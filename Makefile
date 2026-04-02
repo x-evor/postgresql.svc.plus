@@ -6,7 +6,7 @@
         benchmarks-case-set
 
 # Image configuration
-POSTGRES_IMAGE_NAME ?= postgres-extensions
+POSTGRES_IMAGE_NAME ?= postgresql-svc-plus
 # Build arguments
 PG_MAJOR ?= 16
 POSTGRES_IMAGE_TAG ?= $(PG_MAJOR)

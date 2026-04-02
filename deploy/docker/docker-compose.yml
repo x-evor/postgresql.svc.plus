@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres-extensions:${PG_MAJOR:-16}
+    image: postgresql-svc-plus:${PG_MAJOR:-16}
     container_name: postgresql-svc-plus
     restart: unless-stopped
 

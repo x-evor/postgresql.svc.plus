@@ -2,7 +2,7 @@
 
 # Image configuration
 image:
-  repository: postgres-extensions
+  repository: postgresql-svc-plus
   tag: "16"
   pullPolicy: IfNotPresent
 

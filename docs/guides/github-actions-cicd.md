@@ -83,7 +83,7 @@ cat ~/.ssh/github_deploy
 
 **输出**:
 - 镜像推送到 GitHub Container Registry
-- 镜像地址: `ghcr.io/<owner>/postgresql.svc.plus/postgres-extensions:latest`
+- 镜像地址: `ghcr.io/<owner>/postgresql.svc.plus/postgresql-svc-plus:latest`
 
 ### 工作流 2: 部署到 VM
 
