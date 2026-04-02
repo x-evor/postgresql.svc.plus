@@ -31,8 +31,7 @@ runs:
   using: composite
   steps:
     - name: Checkout
-    
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
     - name: Derive platform matrix values
       id: platforms
@@ -103,4 +102,4 @@ runs:
 
     - name: Set up buildx
       if: inputs.enable_docker == 'true'
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
