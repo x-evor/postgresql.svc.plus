@@ -18,7 +18,7 @@ runs:
   steps:
     - name: Generate metadata (auto tags)
       id: meta
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f
       with:
         images: ${{ inputs.image }}
 
