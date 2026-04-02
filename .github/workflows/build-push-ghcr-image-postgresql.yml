@@ -15,7 +15,7 @@ on:
       pg_version:
         description: PostgreSQL version to build.
         required: false
-        default: "16.4"
+        default: "17.0"
         type: string
   workflow_dispatch:
     inputs:
@@ -31,7 +31,7 @@ on:
       pg_version:
         description: PostgreSQL version to build.
         required: false
-        default: "16.4"
+        default: "17.0"
         type: string
 
 permissions:
@@ -83,7 +83,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            PG_MAJOR=16
+            PG_MAJOR=17
             PG_VERSION=${{ inputs.pg_version }}
             PG_JIEBA_VERSION=v2.0.1
             PG_VECTOR_VERSION=v0.8.1

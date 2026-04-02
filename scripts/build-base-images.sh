@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IMAGE_DIR="$ROOT_DIR/deploy/base-images"
 
 OPENRESTY_IMAGE=${OPENRESTY_IMAGE:-xcontrol/openresty-geoip:latest}
-POSTGRES_EXT_IMAGE=${POSTGRES_EXT_IMAGE:-xcontrol/postgresql-svc-plus:16}
+POSTGRES_EXT_IMAGE=${POSTGRES_EXT_IMAGE:-xcontrol/postgresql-svc-plus:17}
 NODE_BUILDER_IMAGE=${NODE_BUILDER_IMAGE:-xcontrol/node-builder:22}
 NODE_RUNTIME_IMAGE=${NODE_RUNTIME_IMAGE:-xcontrol/node-runtime:22}
 GO_BUILDER_IMAGE=${GO_BUILDER_IMAGE:-xcontrol/go-builder:1.23}

@@ -18,7 +18,7 @@ on:
       pg_version:
         description: 'PostgreSQL version'
         required: false
-        default: '16.4'
+        default: '17.0'
       push_image:
         description: 'Push image to registry'
         required: false
@@ -61,7 +61,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=16,enable={{is_default_branch}}
+            type=raw,value=17,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
@@ -74,8 +74,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            PG_MAJOR=16
-            PG_VERSION=${{ github.event.inputs.pg_version || '16.4' }}
+            PG_MAJOR=17
+            PG_VERSION=${{ github.event.inputs.pg_version || '17.0' }}
             PG_JIEBA_VERSION=v2.0.1
             PG_VECTOR_VERSION=v0.8.1
             PGMQ_VERSION=v1.8.0

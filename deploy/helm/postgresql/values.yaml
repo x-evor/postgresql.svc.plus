@@ -3,7 +3,7 @@
 # Image configuration
 image:
   repository: postgresql-svc-plus
-  tag: "16"
+  tag: "17"
   pullPolicy: IfNotPresent
 
 # Image pull secrets for private registries

@@ -68,7 +68,7 @@ docker buildx build --platform linux/amd64,linux/arm64/v8 \
 Each target accepts an optional tag override, for example:
 
 ```bash
-make docker-postgres-extensions POSTGRES_EXT_IMAGE=my-registry/postgresql-svc-plus:16
+make docker-postgres-extensions POSTGRES_EXT_IMAGE=my-registry/postgresql-svc-plus:17
 
 # Go builder (Go 1.23 + build tools)
 make docker-go-builder GO_BUILDER_IMAGE=my-registry/go-builder:1.23
