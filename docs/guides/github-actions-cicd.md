@@ -68,7 +68,7 @@ cat ~/.ssh/github_deploy
 
 ## 🚀 使用方法
 
-### 工作流 1: 构建镜像
+### 工作流 1: 构建并发布镜像
 
 **自动触发**:
 - Push 到 `main` 或 `develop` 分支
@@ -77,7 +77,7 @@ cat ~/.ssh/github_deploy
 
 **手动触发**:
 1. 访问 Actions 页面
-2. 选择 "Build and Push PostgreSQL Image"
+2. 选择 "Build And Push GHCR Image PostgreSQL"
 3. 点击 "Run workflow"
 4. 可选: 指定 PostgreSQL 版本
 
