@@ -82,8 +82,13 @@ cat ~/.ssh/github_deploy
 4. 可选: 指定 PostgreSQL 版本
 
 **输出**:
-- 镜像推送到 GitHub Container Registry
-- 镜像地址: `ghcr.io/x-evor/images/postgresql:latest`
+- GitHub Container Registry 发布产物遵循以下约定:
+  - `oci://ghcr.io/x-evor/charts/postgresql`
+  - `ghcr.io/x-evor/images/postgresql`
+  - `ghcr.io/x-evor/images/stunnel-client`
+  - `ghcr.io/x-evor/images/stunnel-server`
+
+> 说明: 该工作流本身负责 PostgreSQL 镜像构建；这里列出的是与本仓库 CI/CD 对齐的完整 GHCR 命名风格。
 
 ### 工作流 2: 部署到 VM
 
