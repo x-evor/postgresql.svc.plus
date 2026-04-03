@@ -88,6 +88,15 @@ GitHub Actions 工作流:
 - ✅ 一键部署到 K8s/K3s (Helm)
 - ✅ 多环境支持 (dev/staging/prod)
 
+### 📦 GHCR 产物
+
+当前 CI/CD 约定的发布路径如下:
+
+- `oci://ghcr.io/x-evor/charts/postgresql`
+- `ghcr.io/x-evor/images/postgresql`
+- `ghcr.io/x-evor/images/stunnel-client`
+- `ghcr.io/x-evor/images/stunnel-server`
+
 ## 📦 核心特性
 
 ### 多模型数据库
