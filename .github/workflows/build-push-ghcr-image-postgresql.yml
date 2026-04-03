@@ -44,7 +44,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/postgresql-svc-plus
+  IMAGE_NAME: x-evor/images/postgresql
 
 jobs:
   build-and-push:

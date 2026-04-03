@@ -21,7 +21,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  OCI_NAMESPACE: ${{ github.repository_owner }}
+  OCI_NAMESPACE: x-evor/charts
   CHART_DIR: deploy/helm/postgresql
 
 jobs:

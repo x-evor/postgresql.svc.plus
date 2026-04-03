@@ -34,7 +34,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/stunnel-client
+  IMAGE_NAME: x-evor/images/stunnel-client
 
 jobs:
   build-and-push:
