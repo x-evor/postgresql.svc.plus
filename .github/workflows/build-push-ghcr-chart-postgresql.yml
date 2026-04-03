@@ -1,0 +1,68 @@
+name: Build And Push GHCR Chart PostgreSQL
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - "deploy/helm/postgresql/**"
+      - ".github/workflows/build-push-ghcr-chart-postgresql.yml"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: build-push-ghcr-chart-postgresql-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  OCI_NAMESPACE: svc-design
+  CHART_DIR: deploy/helm/postgresql
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repository
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
+
+      - name: Validate Helm Is Available
+        run: helm version
+
+      - name: Log In To GHCR
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.GHCR_TOKEN || github.token }}" | \
+            helm registry login "${REGISTRY}" \
+            --username "${{ vars.GHCR_USERNAME || 'svc-design' }}" \
+            --password-stdin
+
+      - name: Package Chart
+        id: package
+        run: |
+          set -euo pipefail
+          chart_name="$(awk '/^name:/ { print $2; exit }' "${CHART_DIR}/Chart.yaml")"
+          chart_version="$(awk '/^version:/ { print $2; exit }' "${CHART_DIR}/Chart.yaml")"
+          package_dir="$(mktemp -d)"
+
+          helm package "${CHART_DIR}" --destination "${package_dir}"
+
+          chart_archive="${package_dir}/${chart_name}-${chart_version}.tgz"
+          if [ ! -f "${chart_archive}" ]; then
+            echo "Chart archive not found: ${chart_archive}" >&2
+            exit 1
+          fi
+
+          echo "chart_name=${chart_name}" >> "${GITHUB_OUTPUT}"
+          echo "chart_version=${chart_version}" >> "${GITHUB_OUTPUT}"
+          echo "chart_archive=${chart_archive}" >> "${GITHUB_OUTPUT}"
+
+      - name: Push Chart
+        run: |
+          set -euo pipefail
+          helm push "${{ steps.package.outputs.chart_archive }}" "oci://${REGISTRY}/${OCI_NAMESPACE}"
