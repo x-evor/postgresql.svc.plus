@@ -21,7 +21,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  OCI_NAMESPACE: svc-design
+  OCI_NAMESPACE: ${{ github.repository_owner }}
   CHART_DIR: deploy/helm/postgresql
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           echo "${{ secrets.GHCR_TOKEN || github.token }}" | \
             helm registry login "${REGISTRY}" \
-            --username "${{ vars.GHCR_USERNAME || 'svc-design' }}" \
+            --username "${{ vars.GHCR_USERNAME || github.repository_owner }}" \
             --password-stdin
 
       - name: Package Chart
